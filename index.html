@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>A Jornada Matemática</title>
+    <style>
+        body {
+            font-family: 'MedievalSharp', cursive;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-image: url('medieval-background.png'); 
+            background-size: cover;
+            background-position: center;
+            margin: 0;
+            color: #333;
+            transition: background-image 1s ease-in-out;
+        }
+
+        @font-face {
+            font-family: 'MedievalSharp';
+            src: url('MedievalSharp-Regular.ttf') format('truetype'); 
+            font-weight: normal;
+            font-style: normal;
+        }
+
+        .container {
+            background-color: rgba(255, 255, 255, 0.85);
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            text-align: center;
+            border: 2px solid #555;
+        }
+
+        h1, h2 {
+            margin-bottom: 20px;
+            color: #8b4513;
+            text-shadow: 1px 1px #d2b48c;
+        }
+
+        p {
+            margin-bottom: 15px;
+            font-size: 1.1em;
+        }
+
+        #introduction-screen h2 {
+            margin-top: 0;
+        }
+
+        #introduction-screen label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 1.1em;
+        }
+
+        #introduction-screen input[type="text"] {
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            margin-bottom: 15px;
+            width: 80%;
+            max-width: 300px;
+            font-size: 1em;
+        }
+
+        .question {
+            font-size: 1.3em;
+            margin-bottom: 25px;
+            color: #555;
+        }
+
+        .options {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        .options button {
+            padding: 12px 25px;
+            margin: 8px;
+            border: 2px solid #8b4513;
+            border-radius: 6px;
+            cursor: pointer;
+            background-color: #f0e68c;
+            color: #333;
+            font-family: 'MedievalSharp', cursive;
+            font-size: 1em;
+            box-shadow: 2px 2px #d2b48c;
+            transition: background-color 0.3s ease;
+        }
+
+        .options button:hover {
+            background-color: #d2b48c;
+            box-shadow: 1px 1px #8b4513;
+        }
+
+        .feedback {
+            margin-top: 25px;
+            font-weight: bold;
+            font-size: 1.1em;
+            color: #d87093;
+            text-shadow: 1px 1px #f08080;
+        }
+
+        .level-indicator {
+            position: absolute;
+            top: 30px;
+            left: 30px;
+            font-size: 1em;
+            color: #8b4513;
+            font-family: 'MedievalSharp', cursive;
+            text-shadow: 1px 1px #d2b48c;
+        }
+
+        .character-interaction {
+            margin-top: 25px;
+            font-style: italic;
+            color: #777;
+            font-size: 1.1em;
+        }
+
+        #start-adventure-button, #restart-button {
+            padding: 15px 30px;
+            border: 3px solid #8b4513;
+            border-radius: 8px;
+            cursor: pointer;
+            background-color: #f0e68c;
+            color: #333;
+            font-family: 'MedievalSharp', cursive;
+            font-size: 1.2em;
+            box-shadow: 3px 3px #d2b48c;
+            transition: background-color 0.3s ease;
+            margin-top: 20px;
+        }
+
+        #start-adventure-button:hover, #restart-button:hover {
+            background-color: #d2b48c;
+            box-shadow: 2px 2px #8b4513;
+        }
+
+        #restart-button {
+            margin-top: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="level-indicator">Nível: <span id="level-name"></span></div>
+        <h1>A Jornada Matemática</h1>
+        <div id="game-content">
+            <div id="introduction-screen">
+                <h2>O Portal Matemágico</h2>
+                <p id="introduction-text"></p>
+                <label for="username">Seu Nome, Aventureiro(a):</label>
+                <input type="text" id="username" placeholder="Digite seu nome">
+                <button id="start-adventure-button">Iniciar Aventura</button>
+            </div>
+            <div id="interaction" style="display: none;">
+                <p id="story-text"></p>
+            </div>
+            <div id="question-container" style="display: none;">
+                <p class="question" id="question-text"></p>
+                <div class="options" id="options-container"></div>
+                <p class="feedback" id="feedback-text"></p>
+            </div>
+            <button id="restart-button" style="display: none;">Reiniciar Jornada</button>
+        </div>
+    </div>
+
+    <script>
+        const body = document.body;
+        const gameContent = document.getElementById('game-content');
+        const introductionScreen = document.getElementById('introduction-screen');
+        const introductionText = document.getElementById('introduction-text');
+        const usernameInput = document.getElementById('username');
+        const startAdventureButton = document.getElementById('start-adventure-button');
+        const interactionDiv = document.getElementById('interaction');
+        const questionContainer = document.getElementById('question-container');
+        const questionText = document.getElementById('question-text');
+        const optionsContainer = document.getElementById('options-container');
+        const feedbackText = document.getElementById('feedback-text');
+        const restartButton = document.getElementById('restart-button');
+        const levelNameDisplay = document.getElementById('level-name');
+        const storyText = document.getElementById('story-text'); // INSERIDO
+
+        let currentLevel = 0;
+        let questions = [];
+        let playerName = "";
+
+        const levelsData = [
+            {
+                name: "Floresta",
+                character: "Bióloga Maya",
+                intro: "Você se encontra com a Bióloga Maya, que precisa de sua ajuda para entender o crescimento de algumas espécies.",
+                background: "url('floresta-background.png')",
+                questions: [
+                    { question: "Uma planta cresce 2cm no 1º dia, 4cm no 2º, 6cm no 3º. Quanto crescerá no 5º?", options: ["8cm", "10cm", "12cm", "14cm"], answer: "10cm", type: "PA" },
+                    { question: "Uma população de insetos dobra a cada dia. Se começou com 3, quantos haverá no 3º dia?", options: ["6", "9", "12", "24"], answer: "24", type: "PG" }
+                ],
+                dialogue: "Observe os padrões da natureza, pois neles reside a chave do crescimento, Aventureiro(a)!" 
+            },
+            {
+                name: "Cidade das Formas",
+                character: "Arquiteto das Formas",
+                intro: "Você chega à Cidade das Formas, onde o Arquiteto das Formas precisa calcular sequências para seus projetos.",
+                background: "url('cidade-background.png')",
+                questions: [
+                    { question: "Uma sequência de tijolos segue: 1, 3, 5, ... Qual o décimo termo?", options: ["17", "19", "21", "23"], answer: "19", type: "PA" },
+                    { question: "O padrão de azulejos é 2, 6, 18, ... Qual o próximo termo?", options: ["24", "36", "54", "72"], answer: "54", type: "PG" }
+                ],
+                dialogue: "A beleza da arquitetura reside na precisão das sequências. Mostre-me sua precisão, Aventureiro(a)!" 
+            },
+            {
+                name: "Montanhas da Progressão Aritmética",
+                character: "Guardião da Montanha",
+                intro: "Para escalar as Montanhas da Progressão Aritmética, o Guardião da Montanha lhe desafia com problemas mais complexos.",
+                background: "url('guardiao-background.jpeg')", // Placeholder
+                questions: [
+                    { question: "Em uma P.A., o terceiro termo é 7 e o sétimo termo é 15. Qual o primeiro termo?", options: ["1", "3", "5", "7"], answer: "3", type: "PA" },
+                    { question: "A soma dos 5 primeiros termos de uma P.A. é 25. Se o primeiro termo é 2, qual a razão?", options: ["1.5", "2", "3", "4"], answer: "1.5", type: "PA" }
+                ],
+                dialogue: "A jornada até o topo é uma progressão constante. Prove sua constância, Aventureiro(a)!" 
+            },
+            {
+                name: "Reino de Fibonacci",
+                character: "O Bobo de Fibonacci",
+                intro: "Finalmente, você chega ao Reino de Fibonacci, onde o próprio reino está à beira do colapso. O Guardião do Reino lhe fará um último desafio para restaurar a ordem.",
+                background: "url('bobo-background.jpeg')", 
+                questions: [
+                    { question: "Em uma P.G., o segundo termo é 6 e o quarto termo é 24. Qual a razão positiva?", options: ["2", "3", "4", "5"], answer: "2", type: "PG" },
+                    { question: "A soma dos três primeiros termos de uma P.G. é 21. Se o primeiro termo é 3, qual a razão?", options: ["2", "3", "4", "5"], answer: "2", type: "PG" }
+                ],
+                dialogue: "A ordem do reino se revela na dança espiral da sequência. Sinta o ritmo, Aventureiro(a)!" 
+            }
+        ];
+
+        function startGame() {
+            console.log("startGame chamado!"); 
+            playerName = usernameInput.value.trim();
+            if (playerName === "") {
+                playerName = "Aventureiro(a)";
+            }
+            currentLevel = 0;
+            updateLevelDisplay();
+            console.log("Após updateLevelDisplay, introductionScreen display:", introductionScreen.style.display); 
+            console.log("Após updateLevelDisplay, questionContainer display:", questionContainer.style.display); 
+            introductionScreen.style.display = 'none';
+            interactionDiv.style.display = 'block';
+            questionContainer.style.display = 'block';
+            console.log("Após mudança de display, introductionScreen display:", introductionScreen.style.display); 
+            console.log("Após mudança de display, questionContainer display:", questionContainer.style.display); 
+            loadQuestion(); 
+            restartButton.style.display = 'block';
+        }
+
+        function updateLevelDisplay() {
+            console.log("updateLevelDisplay chamado!"); 
+            const currentLevelData = levelsData[currentLevel];
+            levelNameDisplay.textContent = currentLevelData.name;
+            storyText.textContent = currentLevelData.intro; 
+            interactionDiv.innerHTML = `<p class="character-interaction">${currentLevelData.character} diz: "${currentLevelData.dialogue.replace('{playerName}', playerName)}"</p>`; // USANDO A FRASE ESPECÍFICA COM O NOME DO JOGADOR
+            body.style.backgroundImage = currentLevelData.background;
+        }
+
+        function loadQuestion() {
+            console.log("loadQuestion chamado!");
+            questions = [...levelsData[currentLevel].questions];
+            showQuestion();
+        }
+
+        function showQuestion() {
+            console.log("showQuestion chamado!");
+            if (questions.length === 0) {
+                nextLevel();
+                return;
+            }
+
+            const currentQuestion = questions[Math.floor(Math.random() * questions.length)];
+            questionText.textContent = currentQuestion.question;
+            optionsContainer.innerHTML = '';
+            currentQuestion.options.forEach(option => {
+                const button = document.createElement('button');
+                button.textContent = option;
+                button.onclick = () => checkAnswer(option, currentQuestion);
+                optionsContainer.appendChild(button);
+            });
+            feedbackText.textContent = '';
+        }
+
+        function checkAnswer(selectedAnswer, currentQuestion) {
+            console.log("checkAnswer chamado!", selectedAnswer, currentQuestion.answer); 
+            if (selectedAnswer === currentQuestion.answer) {
+                feedbackText.textContent = "Resposta correta!";
+                questions = questions.filter(q => q !== currentQuestion);
+                setTimeout(showQuestion, 1500);
+            } else {
+                feedbackText.textContent = `Resposta incorreta, ${playerName}! Você retorna ao início da sua jornada.`;
+                setTimeout(resetGame, 2000);
+            }
+        }
+
+        function nextLevel() {
+            console.log("nextLevel chamado!"); 
+            currentLevel++;
+            if (currentLevel < levelsData.length) {
+                updateLevelDisplay();
+                loadQuestion();
+            } else {
+            levelNameDisplay.textContent = "Vitória!";
+            interactionDiv.style.display = 'block';
+            interactionDiv.textContent = `Parabéns, ${playerName}! Você restaurou a ordem e salvou o Reino de Fibonacci!`;
+            questionContainer.style.display = 'none';
+            restartButton.textContent = "Jogar Novamente";
+            restartButton.style.display = 'block';
+            body.style.backgroundImage = "url('reino-background.jpeg')";
+            }
+        }
+
+        function resetGame() {
+            console.log("resetGame chamado!"); 
+            currentLevel = 0;
+            questions = [];
+            questionContainer.style.display = 'none';
+            interactionDiv.style.display = 'none';
+            introductionScreen.style.display = 'block';
+            levelNameDisplay.textContent = "";
+            body.style.backgroundImage = "url('medieval-background.png')";
+            restartButton.style.display = 'none';
+        }
+
+        if (startAdventureButton) {
+            startAdventureButton.onclick = function() {
+                console.log("Botão Iniciar Aventura CLICADO!"); 
+                startGame();
+            };
+        } else {
+            console.error("Erro: Botão 'start-adventure-button' não encontrado no HTML.");
+        }
+
+        restartButton.onclick = resetGame;
+        levelNameDisplay.textContent = "";
+        body.style.backgroundImage = "url('medieval-background.png')";
+        introductionText.textContent = "Em uma noite enluarada, enquanto estudava sequências numéricas, um brilho intenso emanou de seu livro, transportando você, Aventureiro(a), para um mundo onde os desafios se resolvem com a matemática. Sua jornada começa agora, e para retornar ao seu lar, você precisará desvendar os segredos da progressão e salvar o reino de Fibonacci do colapso. Prepare-se para encontrar seres mágicos que testarão seu conhecimento em cada etapa do caminho. Errar significa refazer seus passos desde o princípio. Aventure-se, Aventureiro(a), e prove seu valor!";
+
+        usernameInput.addEventListener('input', () => {
+            const currentName = usernameInput.value.trim();
+            introductionText.textContent = `Em uma noite enluarada, enquanto estudava sequências numéricas, um brilho intenso emanou de seu livro, transportando você, ${currentName || 'Aventureiro(a)'}, para um mundo onde os desafios se resolvem com a matemática. Sua jornada começa agora, e para retornar ao seu lar, você precisará desvendar os segredos da progressão e salvar o reino de Fibonacci do colapso. Prepare-se para encontrar seres mágicos que testarão seu conhecimento em cada etapa do caminho. Errar significa refazer seus passos desde o princípio. Aventure-se, ${currentName || 'Aventureiro(a)'}, e prove seu valor!`;
+        });
+    </script>
+</body>
+</html>
